@@ -1,0 +1,14 @@
+[Unit]
+Description=Print boot status message to PSCU front-panel LCD
+After=udev.service
+Before=basic.target
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/home/pscu/odin-lpdpower/scripts/lcdbootmsg '\r   PSCU server is\r     booting ...'
+ExecStop=/home/pscu/odin-lpdpower/scripts/lcdbootmsg '\r   PSCU server is\r   shutting down'
+
+[Install]
+WantedBy=basic.target

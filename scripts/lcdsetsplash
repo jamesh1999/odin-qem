@@ -1,0 +1,18 @@
+#!/home/pscu/venv/bin/python
+
+from lpdpower.usblcd import UsbLcd
+import sys
+
+msg = '                         STFC XFEL           LPD PSCU'
+
+try:
+    lcd = UsbLcd('/dev/ttyACM0', 57600, rows=4, cols=20)
+    lcd.set_backlight_colour((0xFF, 0x30, 0x00))
+
+    lcd.set_splash_text(msg)
+
+    lcd.clear()
+    lcd.write(msg)
+    print 'LCD splashscreen updated'
+except Exception as e:
+    print 'LCD splashscreen update failed: {}'.format(e)

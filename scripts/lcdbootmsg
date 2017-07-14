@@ -1,0 +1,12 @@
+#!/home/pscu/venv/bin/python
+
+from lpdpower.usblcd import UsbLcd
+import sys
+
+msg = sys.argv[1].decode('string-escape')
+
+lcd = UsbLcd("/dev/ttyACM0", 57600, rows=4, cols=20)
+lcd.set_backlight_colour((0xFF, 0x30, 0x00))
+
+lcd.clear()
+lcd.write(msg)
