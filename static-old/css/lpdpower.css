@@ -1,0 +1,91 @@
+.table {
+	width:70%;
+	margin: 0 15% 50px 15%;
+}
+
+.table > tbody > tr > td, .table > tbody > tr > th {
+	vertical-align: middle;
+}
+
+.caption {
+	float: left;
+	width: 250px;
+}
+
+.caption-row {
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+.logo {
+	padding: 10px;
+	height: 50px;
+	top: 0px;
+	margin-top: -15px;
+}
+
+.status {
+	height: 25px;
+	border-radius: 3px;
+	color: #ffffff;
+	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.quad-chan-status {
+    height: 25px;
+    width: 70%;
+    border-radius: 3px;
+    color: #ffffff;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vertical-align {
+	display: flex;
+	align-items: center;
+}
+
+.sidebar-nav-fixed {
+	padding: 9px 9px;
+	position: fixed;
+	left: 0px;
+	top: 55px;
+	width: 220px;
+	background-color: #f9f9f9;
+}
+
+.sidebar-row {
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+.sidebar-title
+{
+	text-align: center;
+}
+
+.sidebar-centered {
+    float: none;
+    margin: 0 auto;
+}
+
+.action-btn {
+	width: 70%; /* 150px; */
+}
+
+.row-fluid > .span-fixed-sidebar {
+	margin-left: 250px;
+}
+
+.pscu-data {
+	margin-left: 230px;
+    padding: 40px 0px;
+    text-align: center;
+}
+
+

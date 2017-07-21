@@ -39,7 +39,6 @@ class Backplane(I2CContainer):
         self.mcp23008.append(self.tca.attach_device(3, MCP23008, 0x42, busnum=1))
         for i in range(8):
             self.mcp23008[0].setup(i, MCP23008.IN)
-            print self.mcp23008[0].input(i)
         self.mcp23008[1].setup(0, MCP23008.OUT)
 
         #Sensor readings

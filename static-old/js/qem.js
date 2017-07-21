@@ -141,7 +141,7 @@ class Quad
     }
 }
 
-function generateTempSensors(count)
+function generateIVSensors(count)
 {
     var ret = `
   <div class="caption">
@@ -161,13 +161,9 @@ function generateTempSensors(count)
   <thead>
     <tr>
       <th class="text-center" style="width:10%;">Chan</th>
-      <th class="text-left"   style="width:20%;">Sensor</th>
-      <th class="text-center" style="width:15%;">Value</th>
-      <th class="text-center" style="width:15%;">Set Point</th>
-      <th class="text-center" style="width:10%;">Trip Mode</th>
-      <th class="text-center" style="width:10%;">Trace</th>
-      <th class="text-center" style="width:10%;">Enable</th>
-      <th class="text-center" style="width:10%;">Tripped</th>
+      <th class="text-left"   style="width:40%;">Sensor</th>
+      <th class="text-center" style="width:25%;">Voltage</th>
+      <th class="text-center" style="width:25%;">Current</th>
     </tr>
     </thead>
   <tbody>
@@ -178,13 +174,9 @@ function generateTempSensors(count)
         ret += `
           <tr>
             <th class="text-center">${id+1}</th>
-            <th class="text-left"><span id="tmp${id}-name"></span></th>
-            <td><span id="tmp${id}-tmp"></span></td>
-            <td><span id="tmp${id}-set"></span></td>
-            <td class="text-center"><span id="tmp${id}-mode"></span></td>
-            <td><div id="tmp${id}-trace" class="status" ></div></td>
-            <td><div id="tmp${id}-enable" class="status" ></div></td>
-            <td><div id="tmp${id}-trip" class="status"></div></td>
+            <th class="text-left"><span id="iv${id}-name"></span></th>
+            <td><span id="iv${id}-voltage"></span></td>
+            <td><span id="iv${id}-current"></span></td>
           </tr>
         `;
     }
@@ -194,7 +186,7 @@ function generateTempSensors(count)
     return ret;
 }
 
-class TempSensor
+class CurrentVoltage
 {
     constructor(id)
     {
@@ -202,10 +194,10 @@ class TempSensor
         this.map = new Map();
         this.active = true;
 
-        var elements = document.querySelectorAll(`[id^='tmp${id}-']`);
+        var elements = document.querySelectorAll(`[id^='iv${id}-']`);
         for (var i = 0; i < elements.length; ++i)
         {
-            var start = 4 + id.toString().length;
+            var start = 3 + id.toString().length;
             var key = elements[i].id.substr(start,
                                             elements[i].id.length - start);
             this.map.set(key, elements[i]);
@@ -213,27 +205,14 @@ class TempSensor
     }
 
     update(data)
-    {
-        this.map.get("trip").style.backgroundColor = data.tripped ? colorFail : colorOk;
-        this.map.get("trace").style.backgroundColor = data.trace ? colorOk : colorFail;
-        var temperatureVal = '';
-        var setpointVal = '';
-        if (data.disabled) {
-            temperatureVal = 'N/C';
-            setpointVal = 'N/C';
-        } else {
-            temperatureVal = round1dp(data.temperature) + '°C';
-            setpointVal = round1dp(data.setpoint) + '°C';
-        }
+    { 
         this.map.get("name").innerHTML = data.name;
-        this.map.get("mode").innerHTML = data.mode;
-        this.map.get("tmp").innerHTML = temperatureVal;
-        this.map.get("set").innerHTML = setpointVal;
-        this.map.get("enable").style.backgroundColor = data.disabled ? colorWarn : colorOk;
+        this.map.get("current").innerHTML = round2dp(data.current) + "mA";
+        this.map.get("voltage").innerHTML = round2dp(data.voltage) + "V";
     }
 }
 
-function generateHumiditySensors(count)
+function generatePowerGood(count)
 {
     var ret = `
       <div class="caption">
@@ -254,12 +233,7 @@ function generateHumiditySensors(count)
 	  <tr>
 	    <th class="text-center" style="width:10%;">Chan</th>
 	    <th class="text-left"   style="width:20%;">Sensor</th>
-	    <th class="text-center" style="width:15%;">Humidity</th>
-	    <th class="text-center" style="width:15%;">Set Point</th>
-	    <th class="text-center" style="width:10%;">Trip Mode</th>
-	    <th class="text-center" style="width:10%;">Trace</th>
-	    <th class="text-center" style="width:10%;">Enable</th>
-	    <th class="text-center" style="width:10%;">Tripped</th>
+	    <th class="text-center" style="width:15%;">Status</th>
 	  </tr>
 	</thead>
       <tbody>
@@ -270,13 +244,8 @@ function generateHumiditySensors(count)
         ret += `
           <tr>
             <th class="text-center">${id+1}</th>
-            <th class="text-left"><span id="h${id}-name"></span></th>
-            <td><span id="h${id}-h"></span></td>
-            <td><span id="h${id}-set"></span></td>
-            <td><span id="h${id}-mode"></span></td>
-            <td><div id="h${id}-trace" class="status" ></div></td>
-            <td><div id="h${id}-enable" class="status" ></div></td>
-            <td><div id="h${id}-trip" class="status"></div></td>
+            <th class="text-left"><span>LEVEL${id+1}_PG</span></th>
+            <td><div class="status" id="pg${id}-value"></div></td>
           </tr>
         `;
     }
@@ -286,17 +255,17 @@ function generateHumiditySensors(count)
     return ret;
 }
 
-class HumiditySensor
+class PGSensor
 {
     constructor(id)
     {
         this.map = new Map();
         this.active = true;
 
-        var elements = document.querySelectorAll(`[id^='h${id}-']`);
+        var elements = document.querySelectorAll(`[id^='pg${id}-']`);
         for (var i = 0; i < elements.length; ++i)
         {
-            var start = 2 + id.toString().length;
+            var start = 3 + id.toString().length;
             var key = elements[i].id.substr(start,
                                             elements[i].id.length - start);
             this.map.set(key, elements[i]);
@@ -305,22 +274,7 @@ class HumiditySensor
 
     update(data)
     {
-        this.map.get("trip").style.backgroundColor = data.tripped ? colorFail : colorOk;
-        this.map.get("trace").style.backgroundColor = data.trace ? colorOk : colorFail;
-        var humidityValue = '';
-        var setpointValue = '';
-        if (data.disabled) {
-            humidityValue = 'N/C';
-            setpointValue = 'N/C'
-        } else {
-            humidityValue = round1dp(data.humidity) + '%';
-            setpointValue = round1dp(data.setpoint) + '%';
-        }
-        this.map.get("name").innerHTML = data.name;
-        this.map.get("mode").innerHTML = data.mode;
-        this.map.get("h").innerHTML = humidityValue;
-        this.map.get("set").innerHTML = setpointValue;
-        this.map.get("enable").style.backgroundColor = data.disabled ? colorWarn : colorOk;
+        this.map.get("value").style.backgroundColor = data ? colorOk : colorFail;
     }
 }
 
@@ -402,7 +356,7 @@ class PumpSensor
     }
 }
 
-function generateFanSensors(count)
+function generateResistors(count)
 {
     var ret = `
       <div class="caption">
@@ -423,11 +377,8 @@ function generateFanSensors(count)
           <tr>
             <th class="text-center" style="width:10%;">Chan</th>
             <th class="text-left" style="width:20%;">Sensor</th>
-            <th class="text-center" style="width:15%;">Speed</th>
-            <th class="text-center" style="width:15%;">Set Point</th>
-            <th class="text-center" style="width:10%;">Trip Mode</th>
-            <th class="text-center" style="width:20%;">Target Speed</th>
-            <th class="text-center" style="width:10%;">Tripped</th>
+            <th class="text-center" style="width:15%;">Value</th>
+            <th class="text-center" style="width:30%;">Set</th>
           </tr>
         </thead>
       <tbody>
@@ -438,20 +389,17 @@ function generateFanSensors(count)
         ret += `
           <tr>
             <th class="text-center">${id+1}</th>
-            <th class="text-left">Fan</th>
-            <td><span id="f${id}-speed">0</span>rpm</td>
-            <td><span id="f${id}-set">0</span>rpm</td>
-            <td><span id="f${id}-mode">?</span></td>
+            <th class="text-left"><span id="vr${id}-name"></span></th>
+            <td class="text-center"><span id="vr${id}-value"></span></td>
             <td>
               <div class="input-group">
-                <input class="form-control" type="text" id="f${id}-target" aria-label="Target fan speed (rpm)">
-                <span class="input-group-addon">%</span>
+                <input class="form-control" type="text" id="vr${id}-set" aria-label="New value"/>
+                <span class="input-group-addon">V</span>
                 <span class="input-group-btn">
-                  <button class="btn btn-default" type="button" onclick="updateSpeed(${id})">Set</button>
+                  <button class="btn btn-default" type="button" onclick="updateVR(${id})">Set</button>
                 </span>
               </div>
             </td>
-            <td><div id="f${id}-trip" class="status"></div></td>
           </tr>
         `;
     }
@@ -461,17 +409,17 @@ function generateFanSensors(count)
     return ret;
 }
 
-class FanSensor
+class VariableResistor
 {
     constructor(id)
     {
         this.map = new Map();
         this.target = 0.0;
 
-        var elements = document.querySelectorAll(`[id^='f${id}-']`);
+        var elements = document.querySelectorAll(`[id^='vr${id}-']`);
         for (var i = 0; i < elements.length; ++i)
         {
-            var start = 2 + id.toString().length;
+            var start = 3 + id.toString().length;
             var key = elements[i].id.substr(start,
                                             elements[i].id.length - start);
             this.map.set(key, elements[i]);
@@ -480,48 +428,112 @@ class FanSensor
 
     update(data)
     {
-        this.map.get("trip").style.backgroundColor = data.tripped ? colorFail : colorOk;
-        this.map.get("speed").innerHTML = round1dp(data.currentspeed);
-        this.map.get("mode").innerHTML = data.mode;
-        this.map.get("set").innerHTML = round1dp(data.setpoint);
+        this.map.get("name").innerHTML = data.name;
+        this.map.get("value").innerHTML = data.value.toString() + "V";
 
-        if(data.target != this.target)
+        if(data.value != this.target)
         {
-            this.map.get("target").placeholder = data.target.toString();
-            this.target = data.target;
+            this.map.get("set").placeholder = data.value.toString();
+            this.target = data.value;
         }
     }
 }
 
+function generateClock()
+{
+    ret = `
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th class="text-center" style="width:30%;">Frequency</th>
+            <th class="text-left" style="width:70%;">Set</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-center"><span id="clock-freq"></span></td>
+            <td>
+              <div class="input-group">
+                <input class="form-control" type="text" id="clock-set" aria-label="New frequency"/>
+                <span class="input-group-addon">MHz</span>
+                <div class="input-group-btn">
+                  <button class="btn btn-default" type="button" onClick="updateFrequency()">Set</button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    `;
+
+    return ret;      
+}
+
+class Clock
+{
+    constructor()
+    {
+        this.map = new Map();
+        this.target = 0.0;
+
+        var elements = document.querySelectorAll(`[id^='clock-']`);
+        for (var i = 0; i < elements.length; ++i)
+        {
+            var start = 6;
+            var key = elements[i].id.substr(start,
+                                            elements[i].id.length - start);
+            this.map.set(key, elements[i]);
+        }
+    }
+
+    update(data)
+    {
+        this.map.get("freq").innerHTML = data.toString() + "MHz";
+
+        if(data != this.target)
+        {
+            this.map.get("set").placeholder = data.toString();
+            this.target = data.value;
+        }
+    }
+}
+
+
 //Add templates to page
 var lpdpower_html = "";
-lpdpower_html += generateQuad(0);
-lpdpower_html += generateQuad(1);
-lpdpower_html += generateQuad(2);
-lpdpower_html += generateQuad(3);
-lpdpower_html += generateTempSensors(11);
-lpdpower_html += generateHumiditySensors(2);
-lpdpower_html += generatePumpSensors(1);
-lpdpower_html += generateFanSensors(1);
+//lpdpower_html += generateQuad(0);
+//lpdpower_html += generateQuad(1);
+//lpdpower_html += generateQuad(2);
+//lpdpower_html += generateQuad(3);
+lpdpower_html += generateIVSensors(13);
+lpdpower_html += generatePowerGood(8);
+//lpdpower_html += generatePumpSensors(1);
+lpdpower_html += generateResistors(7);
+lpdpower_html += generateClock();
 $("#lpdpower").html(lpdpower_html);
 
 var quads = [];
-var temp_sensors = [];
-var humidity_sensors = [];
+var iv_sensors = [];
+var pg_sensors = [];
 var pump_sensor;
-var fan_sensor;
+var variable_resistors = [];
+var clock;
 
 var global_elems = new Map();
 $(document).ready(function() {
 
     //Get sensors and cache DOM elements
-    for(var i = 0; i < 4; ++i)
-        quads.push(new Quad(i));
-    for(var i = 0; i < 11; ++i)
-        temp_sensors.push(new TempSensor(i));
-    for(var i = 0; i < 2; ++i)
-        humidity_sensors.push(new HumiditySensor(i));
+//    for(var i = 0; i < 4; ++i)
+//        quads.push(new Quad(i));
+    for(var i = 0; i < 13; ++i)
+        iv_sensors.push(new CurrentVoltage(i));
+    for(var i = 0; i < 8; ++i)
+        pg_sensors.push(new PGSensor(i));
+    for(var i = 0; i < 7; ++i)
+        variable_resistors.push(new VariableResistor(i));
 
+    clock = new Clock();
+/*
     pump_sensor = new PumpSensor(0);
     fan_sensor = new FanSensor(0);
 
@@ -541,7 +553,7 @@ $(document).ready(function() {
     global_elems.set("position", document.querySelector("#position"));
     global_elems.set("arm", document.querySelector("#button-arm"));
     global_elems.set("enable", document.querySelector("#button-enable"));
-
+*/
     //Start update function
     setInterval(updateAll, 200);
 });
@@ -561,23 +573,28 @@ function update_button_state(el, value, text_true, text_false)
 
 function updateAll()
 {
-    $.getJSON('/api/0.1/lpdpower/', function(response) {
+    $.getJSON('/api/0.1/qem/', function(response) {
 
-        //Handle quads
-        for(var i = 0; i < quads.length; ++i)
-        {
-            quads[i].update(response.quad.quads[i]);
-            quads[i].updateTrace(response.quad.trace[i]);
-        }
+//        //Handle quads
+//        for(var i = 0; i < quads.length; ++i)
+//        {
+//            quads[i].update(response.quad.quads[i]);
+//            quads[i].updateTrace(response.quad.trace[i]);
+//        }
 
         //Handle temp sensors
-        for(var i = 0; i < temp_sensors.length; ++i)
-            temp_sensors[i].update(response.temperature.sensors[i]);
+        for(var i = 0; i < iv_sensors.length; ++i)
+            iv_sensors[i].update(response.current_voltage[i]);
 
         //Handle humidity sensors
-        for(var i = 0; i < humidity_sensors.length; ++i)
-            humidity_sensors[i].update(response.humidity.sensors[i]);
+        for(var i = 0; i < pg_sensors.length; ++i)
+            pg_sensors[i].update(response.power_good[i]);
 
+        for(var i = 0; i < variable_resistors.length; ++i)
+            variable_resistors[i].update(response.resistors[i]);
+
+        clock.update(response.clock);
+/*
         //Handle pump sensor
         pump_sensor.update(response.pump);
 
@@ -607,7 +624,7 @@ function updateAll()
         // Handle button states
         update_button_state(global_elems.get("arm"), response.armed, 'Disarm Interlock', 'Arm Interlock');
         update_button_state(global_elems.get("enable"), response.allEnabled, 'Disable Quads', 'Enable Quads');
-
+*/
     });
 }
 
@@ -656,9 +673,9 @@ function enableQuads()
             data: JSON.stringify({allEnabled: global_elems.get("enable").classList.contains(buttonOff)})});
 }
 
-function updateSpeed(fid)
+function updateVR(id)
 {
-    var el = fan_sensor.map.get("target");
+    var el = variable_resistors[id].map.get("set");
     var value = parseFloat(el.value);
     if(isNaN(value)) {
 	alert("The fan speed must be a decimal number!");
@@ -666,9 +683,27 @@ function updateSpeed(fid)
     }
     el.value = "";
 
-    $.ajax('/api/0.1/lpdpower/fan',
+    $.ajax(`/api/0.1/qem/resistors/${id}/value`,
 	   {method: 'PUT',
 	    contentType: 'application/json',
 	    processData: false,
-	    data: JSON.stringify({target: value})});
+	    data: JSON.stringify(value)});
+}
+
+function updateFrequency()
+{
+    var el = clock.map.get("set");
+    var value = parseFloat(el.value);
+    if(isNaN(value)) {
+    alert("The fan speed must be a decimal number!");
+    return;
+    }
+    el.value = "";
+
+    $.ajax('/api/0.1/qem/clock',
+       {method: 'PUT',
+        contentType: 'application/json',
+        processData: false,
+        data: JSON.stringify(value)});
+
 }
