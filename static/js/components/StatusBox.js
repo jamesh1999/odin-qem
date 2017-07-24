@@ -7,7 +7,7 @@ StatusBox.use =
     function(meta)
     {
         return Component.utils.isLeaf(meta)
-            && meta.type === "bool"
+            && (meta.type === "bool" || meta.type === "status")
             && !meta.writeable;
     };
 
@@ -22,18 +22,26 @@ StatusBox.prototype.update =
         if(data === this.oldValue) return;
 
         this.oldValue = data;
-        if(data)
+        this.statusElem.classList.remove("status-ok");
+        this.statusElem.classList.remove("status-warn");
+
+        if(data === true || data === "ok")
             this.statusElem.classList.add("status-ok");
-        else
-            this.statusElem.classList.remove("status-ok");
+        else if(data === "warn")
+            this.statusElem.classList.add("status-warn");
     };
 
 StatusBox.prototype.generate =
     function()
     {
-        return `
-<div class="status" id="${this.getID()}"></div>
-        `;
+        var ret = `
+<div class="status" id="${this.getID()}" `;
+        if(this.meta.hasOwnProperty("description"))
+        {
+            ret += `title="${this.meta.description}"`;
+        }
+        ret += `></div>`;
+        return ret;
     };
 
 StatusBox.prototype.init =

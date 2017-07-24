@@ -35,8 +35,12 @@ Label.prototype.generate =
         if(this.meta.hasOwnProperty("dp")) this.dp = this.meta.dp;
 
         var ret = `
-<span id="${this.getID()}">-</span>`;
-        
+<span id="${this.getID()}"`;
+        if(this.meta.hasOwnProperty("description"))
+        {
+            ret += `title="${this.meta.description}"`;
+        }
+        ret += `>-</span>`;
         if(this.meta.hasOwnProperty("units"))
         {
             ret += `

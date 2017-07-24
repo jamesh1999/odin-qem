@@ -11,6 +11,18 @@ Layout.use =
 
 Layout.prototype = new Component();
 
+Layout.prototype.init =
+    function()
+    {
+        var collapse = document.getElementById(`${this.getID()}-collapse`);
+        if(collapse !== null)
+        {
+            collapse.addEventListener("click", this.toggleCollapsed.bind(this));
+            this.collapseContainer = document.getElementById(`${this.getID()}-container`);
+            this.collapseDesc = document.getElementById(`${this.getID()}-collapse-desc`);
+            this.buttonSymbol = document.getElementById(`${this.getID()}-button-symbol`);
+        }
+    }
 
 /*
 Three layout modes: horizontal, vertical, tabular
@@ -25,7 +37,7 @@ Third level lists: tabular - level beneath gives rows, final level vertical
 Other: vertical
 */
 Layout.prototype.generate =
-    function(displayMode)
+    function(displayMode, tableHeaders)
     {
         //Sort children leaves/branches
         var leaves = [];
@@ -45,6 +57,7 @@ Layout.prototype.generate =
         if(this.meta.hasOwnProperty("list"))
             isList |= this.meta.list;
 
+        var main = false;
         if(displayMode === undefined)
         {
             if((height === 3 || height === 2) && isList)
@@ -54,28 +67,62 @@ Layout.prototype.generate =
             else
                 displayMode = "vertical";
         }
+        else if(displayMode === "main")
+        {
+            displayMode = "vertical";
+            main = true;
+        }
 
         var desc = null;
         if(this.meta.hasOwnProperty("description"))
             desc = this.meta.description;
 
         var ret = "";
+        
+        //Header containing collapse button, title and description where appropriate
+        if(!main && displayMode !== "table_row" && displayMode !== "table_vertical")
+        {
+            ret += `
+<div class="child-header">
+    <div class="collapse-button" id="${this.getID()}-collapse">
+        <div class="collapse-table">
+            <span class="collapse-cell glyphicon glyphicon-triangle-bottom" id="${this.getID()}-button-symbol"></span>
+        </div>
+    </div>
+    <h4>${this.getName()}</h4>`;
+            if(!main && desc !== null)
+            {
+                ret += `
+    <p class="inline-desc" id="${this.getID()}-collapse-desc"> - ${desc}</p>`;
+            }
+            ret += `
+</div>`;
+        }
+        if(displayMode !== "table_row" && displayMode !== "table_vertical")
+            ret += `
+<div class="flex-container" id="${this.getID()}-container">`;
 
         //Generate HTML
         switch(displayMode)
         {
         case "vertical":
-            if(leaves.length || desc !== null)
+            //List leaves vertically in one column
+            if(leaves.length || main)
             {
                 ret += `
-<div class="${height > 1 ? "parent-column" : "last"}">
-    <h4>${this.getName()}</h4>`;
-                if(desc !== null)
+<div class="${height > 1 ? "parent-column" : "last"}">`;
+                //Main column displays title and description
+                if(main)
                 {
                     ret += `
+    <h4>${this.getName()}</h4>`;
+                    if(desc !== null)
+                    {
+                        ret += `
     <p class="desc">
         ${desc}
     </p>`;
+                    }
                 }
                 ret += `
     <div class="vertical">`;
@@ -86,6 +133,9 @@ Layout.prototype.generate =
             <h5>
                 ${leaf.getName()}:
             </h5>
+            <div class="variable-padding">
+                <div class="padder"></div>
+            </div>
             <div>
                 ${leaf.generate()}
             </div>
@@ -95,21 +145,17 @@ Layout.prototype.generate =
     </div>
 </div>`;
             }
-            else
-            {
-                ret += `
-<h4>${this.getName()}</h4>`;
-            }
+            //List branches vertically in a second
             if(branches.length)
             {
-            ret += `
-<div class="child-column">`;
-            for(var branch of branches)
                 ret += `
-    <div class="float-container">
+<div class="child-column">`;
+                for(var branch of branches)
+                    ret += `
+    <div class="child">
         ${branch.generate()}
     </div>`;
-            ret += `
+                ret += `
 </div>`;
             }
             break;
@@ -119,8 +165,7 @@ Layout.prototype.generate =
             if(leaves.length && height > 1)
             {
                 ret += `
-<div class="parent-column">
-    <h4>${this.getName()}</h4>`;
+<div class="parent-column">`;
                 if(desc !== null)
                 {
                     ret += `
@@ -137,6 +182,9 @@ Layout.prototype.generate =
             <h5>
                 ${leaf.getName()}:
             </h5>
+            <div class="variable-padding">
+                <div class="padder"></div>
+            </div>
             <div>
                 ${leaf.generate()}
             </div>
@@ -146,20 +194,11 @@ Layout.prototype.generate =
     </div>
 </div>`;
             }
-            //List leaves horizontally with description and title above
+            //List leaves horizontally if height is 1
             else if(leaves.length)
             {
                 ret += `
 <div class="last">
-    <h4>${this.getName()}</h4>`;
-                if(desc !== null)
-                {
-                    ret += `
-        <p class="desc">
-            - ${desc}
-        </p>`;
-                }
-                ret += `
     <div class="horizontal">`;
                 for(var leaf of leaves)
                 {
@@ -184,8 +223,10 @@ Layout.prototype.generate =
 <div class="child-column">`;
                 for(var branch of branches)
                     ret += `
-    <div class="float-container">
-        ${branch.generate()}
+    <div class="flex-container">
+        <div class="child">
+            ${branch.generate()}
+        </div>
     </div>`;
             ret += `
 </div>`;
@@ -193,33 +234,87 @@ Layout.prototype.generate =
             break;
 
         case "tabular":
+            //Display branches as rows (THERE SHOULD BE NO LEAVES)
             ret += `
-<h4>${this.getName()}</h4>
-<table>
-    <thead><tr></tr></thead><!--TODO: Add table headers-->
-    <tbody>`;
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <td></td>`;
+            //Get headers from branches
+            var headers = [];
+            var printableHeaders = [];
+            for(var branch of branches)
+            {
+                Array.prototype.push.apply(headers, Object.keys(branch.meta).map(
+                    function(itm)
+                    {
+                        printableHeaders.push(Component.utils.getName(branch.meta, itm));
+                        return itm;
+                    }
+                ));
+            }
+            printableHeaders = printableHeaders.filter(
+                (itm, i, l) => 
+                    ["name", "description", "list"].indexOf(headers[i]) === -1
+                    && headers.indexOf(headers[i]) == i
+            );
+            headers = headers.filter(
+                (itm, i, l) => 
+                    ["name", "description", "list"].indexOf(itm) === -1
+                    && l.indexOf(itm) == i
+            );
+
+            for(var header of printableHeaders)
+                ret += `
+                <th>${header}</th>`;
+            ret += `
+            </tr>
+        </thead>
+        <tbody>`;
+            //Display branches
             for(var branch of branches)
                 ret += `
-        <tr>
-            <th>${branch.getName()}</th>
-            ${branch.generate("table_row")}
-        </tr>`;
+            <tr>
+                <th class="text-right">${branch.getName()}</th>
+                ${branch.generate("table_row", headers)}
+            </tr>`;
             ret += `
-    </tbody>
-</table>`;
+        </tbody>
+    </table>
+</div>`;
             break;
 
         case "table_row":
-            for(var branch of branches)
-                ret += `
-<td>${branch.generate("vertical")}</td>`;
-            for(var leaf of leaves)
-                ret += `
-<td>${leaf.generate()}</td>`;
+            //Display data in the table row matching headers correctly
+            for(var header of tableHeaders)
+            {
+                if(this.children.hasOwnProperty(header))
+                    ret += `
+<td>${this.children[header].generate("table_vertical")}</td>`;
+                else
+                    ret += `
+<td></td>`;
+
+            }
             break;
         }
+        
+        if(displayMode !== "table_row" && displayMode !== "table_vertical")
+            ret += `
+</div>`;
 
         return ret;
     };
+
+Layout.prototype.toggleCollapsed =
+    function()
+    {
+        this.collapseContainer.classList.toggle("collapsed");
+        this.buttonSymbol.classList.toggle("glyphicon-triangle-right");
+        this.buttonSymbol.classList.toggle("glyphicon-triangle-bottom");
+        if(this.collapseDesc !== null)
+            this.collapseDesc.classList.toggle("collapsed");
+    }
 
 Component.registerComponent(Layout);

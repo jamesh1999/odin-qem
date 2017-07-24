@@ -40,9 +40,14 @@ Button.prototype.update =
 Button.prototype.generate =
     function()
     {
-        return `
-<button id="${this.getID()}" type="button" class="btn btn-danger" >Enable</button>
-        `;
+        var ret = `
+<button id="${this.getID()}" type="button" class="btn btn-danger"`;
+        if(this.meta.hasOwnProperty("description"))
+        {
+            ret += `title="${this.meta.description}"`;
+        }
+        ret += `>Enable</button>`;
+        return ret;
     };
 
 Button.prototype.init =
