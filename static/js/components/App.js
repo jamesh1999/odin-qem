@@ -34,6 +34,7 @@ function App()
 App.prototype.freq_overlay = null;
 App.prototype.query_overlay = null;
 App.prototype.update_delay = 0.2;
+App.prototype.dark_mode = false;
 
 //Submit GET request then update the current adapter with new data
 App.prototype.update =
@@ -68,9 +69,7 @@ App.prototype.generate =
             Odin Server
         </div>
     </div>
-    <div class="navbar-brand navbar-logo">
-        <img class="navbar-brand logo" src="img/stfc_logo.png">
-    </div>
+    <img class="logo" src="img/stfc_logo.png">
     <ul class="nav navbar-nav" id="adapter-links"></ul>
 
     <ul class="nav navbar-nav navbar-right">
@@ -90,6 +89,7 @@ App.prototype.generate =
         this.mount.appendChild(navbar);
         document.getElementById("update-freq").addEventListener("click", this.updateFrequency.bind(this));
         document.getElementById("toggle-dark").addEventListener("click", this.toggleDark.bind(this));
+        this.documentBody = document.getElementsByTagName("body")[0];
         document.getElementById("raw-query").addEventListener("click", this.rawQuery.bind(this));
         var nav_list = document.getElementById("adapter-links");
 
@@ -190,6 +190,9 @@ App.prototype.generate =
     API Version: ${api_version}
 </p>`;
         this.mount.appendChild(footer);
+        
+        if(this.getCookie("dark") === "true")
+            this.toggleDark();
     };
 
 //Handles onClick events from the navbar
@@ -267,7 +270,11 @@ App.prototype.frequencySet =
 App.prototype.toggleDark =
     function()
     {
+        this.dark_mode = !this.dark_mode;
+        this.setCookie("dark", this.dark_mode.toString());
+
         this.mount.classList.toggle("dark");
+        this.documentBody.classList.toggle("background-dark");
     };
 
 App.prototype.rawQuery =
@@ -299,6 +306,42 @@ App.prototype.queryGet =
             }
         )
         .fail(this.setError.bind(this));
+    };
+
+App.prototype.getCookie =
+    function(key)
+    {
+        var raw = document.cookie.split(';');
+        for(var value of raw)
+        {
+            if(value.indexOf(key) == 0)
+                return decodeURIComponent(value.substring(key.length + 1));
+        }
+    };
+
+App.prototype.setCookie =
+    function(key, value)
+    {
+        var date = new Date();
+        date.setTime(date.getTime() + 30 * (24 * 60 * 60 * 1000));
+        var expires = `expires=${date.toUTCString()}`;
+
+        var raw = document.cookie.split(';');
+        raw = raw.filter((itm) => itm.indexOf("path") !== 0
+                                && itm.indexOf("expires") !== 0
+                                && itm.length > 0);
+        var cookieString = `${key}=${encodeURIComponent(value)}`;
+        var found = false;
+        for(var i = 0; i < raw.length; i++)
+            if(raw[i].indexOf(key) === 0)
+            {
+                raw[i] = cookieString;
+                found = true;
+            }
+        if(!found)
+            raw.push(cookieString);
+        var s = `${raw.join(';')};${expires};path=/`;
+        document.cookie = `${raw.join(';')};${expires};path=/`;
     };
 
 //Create the App() instance

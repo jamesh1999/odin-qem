@@ -41,7 +41,7 @@ Button.prototype.generate =
     function()
     {
         var ret = `
-<button id="${this.getID()}" type="button" class="btn btn-danger"`;
+<button id="${this.getID()}" type="button" class="btn btn-toggle btn-danger"`;
         if(this.meta.hasOwnProperty("description"))
         {
             ret += `title="${this.meta.description}"`;

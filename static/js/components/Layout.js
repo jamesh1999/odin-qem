@@ -11,6 +11,13 @@ Layout.use =
 
 Layout.prototype = new Component();
 
+Layout.prototype.collapseContainer = null;
+Layout.prototype.collapseDesc = null;
+Layout.prototype.buttonSymbol = null;
+Layout.prototype.hasOverall = false;
+Layout.prototype.overall = null;
+Layout.prototype.oldValue = false;
+
 Layout.prototype.init =
     function()
     {
@@ -22,7 +29,25 @@ Layout.prototype.init =
             this.collapseDesc = document.getElementById(`${this.getID()}-collapse-desc`);
             this.buttonSymbol = document.getElementById(`${this.getID()}-button-symbol`);
         }
-    }
+        if(this.hasOverall)
+            this.overall = document.getElementById(`${this.getID()}-overall`);
+    };
+
+Layout.prototype.update =
+    function(data)
+    {
+        if(!this.hasOverall) return;
+        if(data.overall === this.oldValue) return;
+
+        this.oldValue = data.overall;
+        this.overall.classList.remove("status-ok");
+        this.overall.classList.remove("status-warn");
+
+        if(data.overall === true || data.overall === "ok")
+            this.overall.classList.add("status-ok");
+        else if(data.overall === "warn")
+            this.overall.classList.add("status-warn");        
+    };
 
 /*
 Three layout modes: horizontal, vertical, tabular
@@ -42,9 +67,18 @@ Layout.prototype.generate =
         //Sort children leaves/branches
         var leaves = [];
         var branches = [];
+
+        //Guarantee overall is first and flag to add to title bar
+        if(this.children.hasOwnProperty("overall") && this.children.overall.leaf)
+        {
+            leaves.push(this.children.overall);
+            this.hasOverall = displayMode !== "main";
+        }
     
         for(var key in this.children)
         {
+            if(this.hasOverall && key === "overall") continue;
+
             if(this.children[key].leaf)
                 leaves.push(this.children[key]);
             else
@@ -80,6 +114,7 @@ Layout.prototype.generate =
         var ret = "";
         
         //Header containing collapse button, title and description where appropriate
+        //Contains overall if present
         if(!main && displayMode !== "table_row" && displayMode !== "table_vertical")
         {
             ret += `
@@ -90,7 +125,12 @@ Layout.prototype.generate =
         </div>
     </div>
     <h4>${this.getName()}</h4>`;
-            if(!main && desc !== null)
+            if(this.hasOverall)
+            {
+                ret += `
+<div class="status status-inline collapsed" id="${this.getID()}-overall"></div>`;
+            }
+            if(desc !== null)
             {
                 ret += `
     <p class="inline-desc" id="${this.getID()}-collapse-desc"> - ${desc}</p>`;
@@ -315,6 +355,8 @@ Layout.prototype.toggleCollapsed =
         this.buttonSymbol.classList.toggle("glyphicon-triangle-bottom");
         if(this.collapseDesc !== null)
             this.collapseDesc.classList.toggle("collapsed");
+        if(this.hasOverall)
+            this.overall.classList.toggle("collapsed");
     }
 
 Component.registerComponent(Layout);
